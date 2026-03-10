@@ -1,0 +1,26 @@
+/* Fix sidebar width and prevent layout issues */
+.db-sidebar {
+  flex: 0 1 320px;
+  max-width: 320px;
+  min-width: 320px;
+}
+
+@media (max-width: 991.98px) {
+  .db-sidebar {
+    flex: 1 1 100%;
+    max-width: 100%;
+    min-width: auto;
+  }
+}
+
+/* Active sidebar link */
+.sidebar-link.active {
+  color: #0d6efd !important;
+  background-color: rgba(13, 110, 253, 0.08);
+  border-radius: 8px;
+}
+
+.sidebar-link.active .sidebar-item-icon,
+.sidebar-link.active .sidebar-item-text {
+  color: #0d6efd !important;
+}

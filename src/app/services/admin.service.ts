@@ -1,0 +1,120 @@
+import { inject, Injectable } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { Observable } from 'rxjs';
+import { environment } from '../../environments/environment';
+
+@Injectable({
+  providedIn: 'root',
+})
+export class AdminService {
+  private readonly http = inject(HttpClient);
+  private readonly baseUrl = environment.apiBaseUrl;
+
+  getCsrf(): Observable<any> {
+    return this.http.get(`${this.baseUrl}/csrf/`, { withCredentials: true });
+  }
+
+  getDashboardSummary(days = 7): Observable<any> {
+    return this.http.get(`${this.baseUrl}/dashboard/summary/`, {
+      params: { days },
+      withCredentials: true,
+    });
+  }
+
+  /** Lấy summary + timeseries trong 1 request → load nhanh hơn */
+  getDashboardData(days = 7): Observable<{ summary: any; timeseries: any }> {
+    return this.http.get<{ summary: any; timeseries: any }>(`${this.baseUrl}/dashboard/`, {
+      params: { days },
+      withCredentials: true,
+    });
+  }
+
+  getDashboardTimeseries(days = 7): Observable<any> {
+    return this.http.get(`${this.baseUrl}/dashboard/timeseries/`, {
+      params: { days },
+      withCredentials: true,
+    });
+  }
+
+  getListings(status?: string): Observable<any[]> {
+    const params: any = {};
+    if (status) params.status = status;
+    return this.http.get<any[]>(`${this.baseUrl}/listings/`, {
+      params,
+      withCredentials: true,
+    });
+  }
+
+  approveListing(id: number): Observable<any> {
+    return this.http.post(`${this.baseUrl}/listings/${id}/approve/`, null, {
+      withCredentials: true,
+    });
+  }
+
+  rejectListing(id: number): Observable<any> {
+    return this.http.post(`${this.baseUrl}/listings/${id}/reject/`, null, {
+      withCredentials: true,
+    });
+  }
+
+  getUsers(): Observable<any[]> {
+    return this.http.get<any[]>(`${this.baseUrl}/users/`, {
+      withCredentials: true,
+    });
+  }
+
+  blockUser(id: number): Observable<any> {
+    return this.http.post(`${this.baseUrl}/users/${id}/block/`, null, {
+      withCredentials: true,
+    });
+  }
+
+  unblockUser(id: number): Observable<any> {
+    return this.http.post(`${this.baseUrl}/users/${id}/unblock/`, null, {
+      withCredentials: true,
+    });
+  }
+
+  getReports(): Observable<any[]> {
+    return this.http.get<any[]>(`${this.baseUrl}/reports/`, {
+      withCredentials: true,
+    });
+  }
+
+  updateReportStatus(id: number, status: string): Observable<any> {
+    return this.http.post(
+      `${this.baseUrl}/reports/${id}/set_status/`,
+      { status },
+      { withCredentials: true },
+    );
+  }
+
+  getFeeStatistics(days = 7): Observable<any> {
+    return this.http.get(`${this.baseUrl}/fees/statistics/`, {
+      params: { days },
+      withCredentials: true,
+    });
+  }
+
+  getFeeTopTransactions(): Observable<any[]> {
+    return this.http.get<any[]>(`${this.baseUrl}/fees/top-transactions/`, {
+      withCredentials: true,
+    });
+  }
+
+  saveDashboardReport(summary: any, timeseries: any): Observable<any> {
+    return this.http.post(
+      `${this.baseUrl}/dashboard/save-report/`,
+      { summary, timeseries },
+      { withCredentials: true },
+    );
+  }
+
+  saveFeesReport(stats: any, timeseries: any): Observable<any> {
+    return this.http.post(
+      `${this.baseUrl}/fees/save-report/`,
+      { stats, timeseries },
+      { withCredentials: true },
+    );
+  }
+}
