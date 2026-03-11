@@ -36,6 +36,14 @@ export class AdminService {
     });
   }
 
+  exportDashboardReport(days = 7): Observable<Blob> {
+    return this.http.get(`${this.baseUrl}/dashboard/export-report/`, {
+      params: { days },
+      withCredentials: true,
+      responseType: 'blob' as 'json',
+    });
+  }
+
   getListings(status?: string): Observable<any[]> {
     const params: any = {};
     if (status) params.status = status;
@@ -116,5 +124,13 @@ export class AdminService {
       { stats, timeseries },
       { withCredentials: true },
     );
+  }
+
+  exportFeesReport(days = 7): Observable<Blob> {
+    return this.http.get(`${this.baseUrl}/fees/export-report/`, {
+      params: { days },
+      withCredentials: true,
+      responseType: 'blob' as 'json',
+    });
   }
 }

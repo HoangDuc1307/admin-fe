@@ -131,18 +131,22 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
     }
     this.savingReport = true;
     this.saveMessage = '';
-    const doSave = () => {
-      this.adminService.saveDashboardReport(this.summary, this.ts).subscribe({
-        next: () => {
-          this.savingReport = false;
-          this.saveMessage = 'Đã lưu báo cáo.';
-        },
-        error: () => {
-          this.savingReport = false;
-          this.saveMessage = 'Lưu thất bại (kiểm tra đăng nhập admin).';
-        },
-      });
-    };
-    this.adminService.getCsrf().subscribe({ next: doSave, error: doSave });
+    const days = this.chartDays || this.summary.days || 7;
+    this.adminService.exportDashboardReport(days).subscribe({
+      next: (blob: any) => {
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `dashboard-report-${days}-days.csv`;
+        a.click();
+        window.URL.revokeObjectURL(url);
+        this.savingReport = false;
+        this.saveMessage = 'Đã tải file báo cáo (Excel).';
+      },
+      error: () => {
+        this.savingReport = false;
+        this.saveMessage = 'Xuất báo cáo thất bại (kiểm tra đăng nhập admin).';
+      },
+    });
   }
 }

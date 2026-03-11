@@ -78,9 +78,22 @@ export class FeesStatisticsComponent implements OnInit, OnDestroy {
     if (!this.stats || !this.ts) { this.saveMessage = 'Chưa có dữ liệu để lưu.'; return; }
     this.savingReport = true;
     this.saveMessage = '';
-    this.adminService.saveFeesReport(this.stats, this.ts).subscribe({
-      next: () => { this.savingReport = false; this.saveMessage = 'Đã lưu báo cáo phí sàn.'; },
-      error: () => { this.savingReport = false; this.saveMessage = 'Lưu thất bại.'; },
+    const days = this.chartDays || this.stats.days || 7;
+    this.adminService.exportFeesReport(days).subscribe({
+      next: (blob: any) => {
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `fees-report-${days}-days.csv`;
+        a.click();
+        window.URL.revokeObjectURL(url);
+        this.savingReport = false;
+        this.saveMessage = 'Đã tải file báo cáo phí sàn (Excel).';
+      },
+      error: () => {
+        this.savingReport = false;
+        this.saveMessage = 'Xuất báo cáo thất bại.';
+      },
     });
   }
 }
