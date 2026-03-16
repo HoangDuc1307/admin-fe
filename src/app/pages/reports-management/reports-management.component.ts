@@ -70,11 +70,43 @@ export class ReportsManagementComponent implements OnInit {
     });
   }
 
-  setStatus(report: any, s: ReportStatus): void {
-    if (!confirm(`Cập nhật trạng thái báo cáo #${report.id} thành "${this.statusLabels[s]}"?`)) return;
-    this.adminService.updateReportStatus(report.id, s).subscribe({
-      next: () => this.load(),
-      error: () => this.error.set('Cập nhật thất bại.'),
+  selectedReport = signal<any>(null);
+  showModal = signal(false);
+  replyText = signal('');
+  actionChoice = signal('NONE');
+  newStatus = signal<ReportStatus>('OPEN');
+
+  openProcessModal(report: any): void {
+    this.selectedReport.set(report);
+    this.newStatus.set(report.status);
+    this.replyText.set(report.admin_reply || '');
+    this.actionChoice.set('NONE');
+    this.showModal.set(true);
+  }
+
+  closeModal(): void {
+    this.showModal.set(false);
+    this.selectedReport.set(null);
+  }
+
+  submitProcess(): void {
+    const r = this.selectedReport();
+    if (!r) return;
+    this.loading.set(true);
+    this.adminService.updateReportStatus(
+      r.id, 
+      this.newStatus(), 
+      this.replyText(), 
+      this.actionChoice()
+    ).subscribe({
+      next: () => {
+        this.closeModal();
+        this.load();
+      },
+      error: () => {
+        this.error.set('Cập nhật báo cáo thất bại.');
+        this.loading.set(false);
+      }
     });
   }
 }

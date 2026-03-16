@@ -58,6 +58,14 @@
                             <td><span class="fw-semibold">{{ r.target_username }}</span></td>
                             <td>
                                 <div class="text-wrap" style="max-width: 250px;">{{ r.reason }}</div>
+                                <div *ngIf="r.evidences && r.evidences.length > 0" class="mt-2">
+                                    <small class="text-muted d-block mb-1">Bằng chứng đính kèm:</small>
+                                    <div class="d-flex flex-wrap gap-1">
+                                        <a *ngFor="let ev of r.evidences" [href]="ev.image" target="_blank" class="d-inline-block border rounded p-1" style="background: #f8f9fa;">
+                                            <img [src]="ev.image" alt="Evidence" style="max-height: 40px; max-width: 60px; object-fit: cover;">
+                                        </a>
+                                    </div>
+                                </div>
                             </td>
                             <td class="text-center">
                                 <span class="badge rounded-lg rounded-pill py-2 px-3 border-0 fs-12 w-100"
@@ -72,11 +80,9 @@
                             </td>
                             <td>{{ r.created_at | date:'dd/MM/yyyy' }}</td>
                             <td class="text-center">
-                                <select id="reportStatus-{{ r.id }}" name="status" class="form-select form-select-sm d-inline-block w-auto"
-                                        [ngModel]="r.status" (ngModelChange)="setStatus(r, $event)"
-                                        [attr.aria-label]="'Đổi trạng thái báo cáo ' + r.id">
-                                    <option *ngFor="let s of statuses" [value]="s">{{ statusLabels[s] }}</option>
-                                </select>
+                                <button class="btn btn-outline-primary btn-sm rounded-pill fw-semibold px-4" (click)="openProcessModal(r)">
+                                    Xử lý
+                                </button>
                             </td>
                         </tr>
                     </tbody>
@@ -85,6 +91,77 @@
             <ng-template #empty>
                 <div class="text-center py-5 text-muted">😕 Không có báo cáo phù hợp.</div>
             </ng-template>
+        </div>
+    </div>
+</div>
+
+<!-- Process Report Modal -->
+<div *ngIf="showModal()" class="modal fade show" tabindex="-1" style="display: block; background: rgba(0,0,0,0.5);">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content border-0 rounded-4 shadow-lg">
+            <div class="modal-header border-bottom-0 pb-0">
+                <h5 class="modal-title fs-5 fw-bold">Biên bản xử lý Báo cáo #{{ selectedReport()?.id }}</h5>
+                <button type="button" class="btn-close" (click)="closeModal()"></button>
+            </div>
+            <div class="modal-body p-5">
+                <div class="row mb-4">
+                    <div class="col-6">
+                        <p class="mb-1 text-muted fs-14px">Người tố cáo</p>
+                        <p class="fw-bold mb-0 text-primary">@{{ selectedReport()?.reporter_username }}</p>
+                    </div>
+                    <div class="col-6">
+                        <p class="mb-1 text-muted fs-14px">Người bị tố cáo</p>
+                        <p class="fw-bold mb-0 text-danger">@{{ selectedReport()?.target_username }}</p>
+                    </div>
+                </div>
+
+                <div class="bg-light rounded p-4 mb-4">
+                    <h6 class="fw-bold fs-14px">Lý do báo cáo:</h6>
+                    <p class="mb-0 text-body-secondary">{{ selectedReport()?.reason }}</p>
+                </div>
+
+                <div class="mb-4" *ngIf="selectedReport()?.evidences?.length">
+                    <h6 class="fw-bold fs-14px mb-3">Bằng chứng kèm theo ({{ selectedReport()?.evidences.length }} file):</h6>
+                    <div class="d-flex flex-wrap gap-2">
+                        <a *ngFor="let ev of selectedReport()?.evidences" [href]="ev.image" target="_blank" class="border rounded p-1 d-inline-block bg-white shadow-sm">
+                            <img [src]="ev.image" alt="Evidence" style="max-height: 100px; max-width: 150px; object-fit: cover; border-radius: 4px;">
+                        </a>
+                    </div>
+                </div>
+
+                <hr class="my-4">
+
+                <form (ngSubmit)="submitProcess()">
+                    <div class="row g-4">
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Quyết định trạng thái Báo cáo:</label>
+                            <select class="form-select" [ngModel]="newStatus()" (ngModelChange)="newStatus.set($event)" name="status">
+                                <option *ngFor="let s of statuses" [value]="s">{{ statusLabels[s] }}</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold text-danger">Quyết định Xử phạt (Người bị tố cáo):</label>
+                            <select class="form-select border-danger" [ngModel]="actionChoice()" (ngModelChange)="actionChoice.set($event)" name="actionChoice">
+                                <option value="NONE">✅ Không phạt</option>
+                                <option value="WARNING">⚠️ Gửi cảnh cáo (+1 Cảnh cáo)</option>
+                                <option value="BLOCK">⛔ Khóa tài khoản ngay lập tức</option>
+                            </select>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-bold">Phản hồi cho người tố cáo (Gửi qua Email):</label>
+                            <textarea class="form-control" rows="3" placeholder="Nhập lời cảm ơn hoặc kết luận gửi đến @{{ selectedReport()?.reporter_username }}..." [ngModel]="replyText()" (ngModelChange)="replyText.set($event)" name="replyText"></textarea>
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex justify-content-end mt-5 gap-3">
+                        <button type="button" class="btn btn-light" (click)="closeModal()">Hủy bỏ</button>
+                        <button type="submit" class="btn btn-primary px-5" [disabled]="loading()">
+                            <span *ngIf="loading()" class="spinner-border spinner-border-sm me-2"></span>
+                            Lưu quyết định
+                        </button>
+                    </div>
+                </form>
+            </div>
         </div>
     </div>
 </div>

@@ -21,6 +21,10 @@ export class ListingsApprovalComponent implements OnInit {
   error = signal<string | null>(null);
   items = signal<any[]>([]);
 
+  // Listing Detail Modal State
+  showListingModal = signal(false);
+  currentListing = signal<any>(null);
+
   filteredItems = computed(() => {
     const q = this.search().trim().toLowerCase();
     if (!q) return this.items();
@@ -54,17 +58,43 @@ export class ListingsApprovalComponent implements OnInit {
   approve(id: number): void {
     if (!confirm('Duyệt bài đăng này?')) return;
     this.adminService.approveListing(id).subscribe({
-      next: () => this.load(),
+      next: () => {
+        this.load();
+        if (this.currentListing() && this.currentListing().id === id) {
+             this.currentListing.update(l => ({...l, status: 'APPROVED'}));
+        }
+      },
       error: () => this.error.set('Duyệt thất bại (kiểm tra đăng nhập admin/CSRF).'),
     });
   }
 
   reject(id: number): void {
-    if (!confirm('Từ chối bài đăng này?')) return;
-    this.adminService.rejectListing(id).subscribe({
-      next: () => this.load(),
+    const reason = window.prompt('Nhập lý do từ chối (bắt buộc để gửi email cho Seller):', '');
+    if (reason === null) return; // Người dùng ấn Cancel
+    if (!reason.trim()) {
+      alert('Vui lòng nhập lý do từ chối!');
+      return;
+    }
+    
+    this.adminService.rejectListing(id, reason.trim()).subscribe({
+      next: () => {
+        this.load();
+        if (this.currentListing() && this.currentListing().id === id) {
+             this.currentListing.update(l => ({...l, status: 'REJECTED'}));
+        }
+      },
       error: () => this.error.set('Từ chối thất bại (kiểm tra đăng nhập admin/CSRF).'),
     });
+  }
+
+  viewListing(listing: any): void {
+    this.currentListing.set(listing);
+    this.showListingModal.set(true);
+  }
+
+  closeListingModal(): void {
+    this.showListingModal.set(false);
+    this.currentListing.set(null);
   }
 }
 

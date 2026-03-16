@@ -40,7 +40,7 @@ export class AdminService {
     return this.http.get(`${this.baseUrl}/dashboard/export-report/`, {
       params: { days },
       withCredentials: true,
-      responseType: 'blob' as 'json',
+      responseType: 'blob'
     });
   }
 
@@ -59,8 +59,14 @@ export class AdminService {
     });
   }
 
-  rejectListing(id: number): Observable<any> {
-    return this.http.post(`${this.baseUrl}/listings/${id}/reject/`, null, {
+  getPriceHistory(id: number): Observable<any[]> {
+    return this.http.get<any[]>(`${this.baseUrl}/listings/${id}/price-history/`, {
+      withCredentials: true,
+    });
+  }
+
+  rejectListing(id: number, reason: string = 'Không có lý do'): Observable<any> {
+    return this.http.post(`${this.baseUrl}/listings/${id}/reject/`, { reason }, {
       withCredentials: true,
     });
   }
@@ -89,10 +95,14 @@ export class AdminService {
     });
   }
 
-  updateReportStatus(id: number, status: string): Observable<any> {
+  updateReportStatus(id: number, status: string, admin_reply?: string, action?: string): Observable<any> {
+    const payload: any = { status };
+    if (admin_reply !== undefined) payload.admin_reply = admin_reply;
+    if (action !== undefined) payload.action = action;
+
     return this.http.post(
       `${this.baseUrl}/reports/${id}/set_status/`,
-      { status },
+      payload,
       { withCredentials: true },
     );
   }
@@ -130,7 +140,18 @@ export class AdminService {
     return this.http.get(`${this.baseUrl}/fees/export-report/`, {
       params: { days },
       withCredentials: true,
-      responseType: 'blob' as 'json',
+      responseType: 'blob',
+    });
+  }
+
+  getAuditLogs(actionParam?: string): Observable<any[]> {
+    const params: any = {};
+    if (actionParam && actionParam !== 'ALL') {
+      params.action = actionParam;
+    }
+    return this.http.get<any[]>(`${this.baseUrl}/logs/`, {
+      params,
+      withCredentials: true,
     });
   }
 }
