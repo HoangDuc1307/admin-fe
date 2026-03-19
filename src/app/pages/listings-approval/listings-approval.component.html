@@ -135,6 +135,10 @@
                             </span>
                         </div>
 
+                        <div *ngIf="currentListing()?.status === 'REJECTED' && currentListing()?.reject_reason" class="alert alert-danger p-2 fs-14px mb-4">
+                            <strong>Lý do từ chối:</strong> {{ currentListing()?.reject_reason }}
+                        </div>
+
                         <h6 class="fw-bold mt-4 mb-2">Hình ảnh sản phẩm:</h6>
                         <div class="d-flex flex-wrap gap-2 mb-3" *ngIf="currentListing()?.images?.length; else noImage">
                             <a *ngFor="let img of currentListing()?.images" [href]="img.image" target="_blank" class="border rounded p-1 d-inline-block bg-white shadow-sm">

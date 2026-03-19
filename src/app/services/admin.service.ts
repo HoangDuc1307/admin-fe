@@ -89,6 +89,12 @@ export class AdminService {
     });
   }
 
+  getUserActivity(id: number): Observable<any> {
+    return this.http.get(`${this.baseUrl}/users/${id}/activity/`, {
+      withCredentials: true,
+    });
+  }
+
   getReports(): Observable<any[]> {
     return this.http.get<any[]>(`${this.baseUrl}/reports/`, {
       withCredentials: true,
@@ -101,7 +107,7 @@ export class AdminService {
     if (action !== undefined) payload.action = action;
 
     return this.http.post(
-      `${this.baseUrl}/reports/${id}/set_status/`,
+      `${this.baseUrl}/reports/${id}/resolve/`,
       payload,
       { withCredentials: true },
     );
@@ -151,6 +157,12 @@ export class AdminService {
     }
     return this.http.get<any[]>(`${this.baseUrl}/logs/`, {
       params,
+      withCredentials: true,
+    });
+  }
+
+  getNotifications(): Observable<{ unread_count: number; items: any[] }> {
+    return this.http.get<{ unread_count: number; items: any[] }>(`${this.baseUrl}/dashboard/notifications/`, {
       withCredentials: true,
     });
   }

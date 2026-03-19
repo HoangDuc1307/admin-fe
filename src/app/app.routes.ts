@@ -7,5 +7,6 @@ export const routes: Routes = [
   { path: 'pages/users', loadComponent: () => import('./pages/users-management/users-management.component').then(m => m.UsersManagementComponent) },
   { path: 'pages/reports', loadComponent: () => import('./pages/reports-management/reports-management.component').then(m => m.ReportsManagementComponent) },
   { path: 'pages/fees', loadComponent: () => import('./pages/fees-statistics/fees-statistics.component').then(m => m.FeesStatisticsComponent) },
+  { path: 'pages/users/:id', loadComponent: () => import('./pages/users-management/user-details/user-details.component').then(m => m.UserDetailComponent) },
   { path: 'pages/audit-logs', loadComponent: () => import('./pages/audit-logs/audit-logs').then(m => m.AuditLogsComponent) },
 ];

@@ -39,7 +39,8 @@
                                     {{ u.is_active ? '✅ Hoạt động' : '🔒 Bị khóa' }}
                                 </span>
                             </div>
-                            <div class="mt-4">
+                            <div class="mt-4 d-flex flex-column gap-2">
+                                <a class="btn btn-sm btn-outline-primary w-100" [routerLink]="['/pages/users', u.id]">📄 Xem chi tiết</a>
                                 <button class="btn btn-sm btn-outline-danger w-100" *ngIf="u.is_active" (click)="block(u)">🔒 Khóa</button>
                                 <button class="btn btn-sm btn-outline-success w-100" *ngIf="!u.is_active" (click)="unblock(u)">🔓 Mở khóa</button>
                             </div>

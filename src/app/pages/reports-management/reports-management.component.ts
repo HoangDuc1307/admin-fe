@@ -1,6 +1,7 @@
 import { CommonModule, DatePipe } from '@angular/common';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 import { AdminService } from '../../services/admin.service';
 
 type ReportStatus = 'OPEN' | 'IN_PROGRESS' | 'RESOLVED' | 'REJECTED';
@@ -8,7 +9,7 @@ type ReportStatus = 'OPEN' | 'IN_PROGRESS' | 'RESOLVED' | 'REJECTED';
 @Component({
   selector: 'app-reports-management',
   standalone: true,
-  imports: [CommonModule, FormsModule, DatePipe],
+  imports: [CommonModule, FormsModule, DatePipe, RouterLink],
   templateUrl: './reports-management.component.html',
   styleUrl: './reports-management.component.css',
 })
@@ -89,10 +90,13 @@ export class ReportsManagementComponent implements OnInit {
     this.selectedReport.set(null);
   }
 
+  // Hàm gửi kết quả xử lý báo cáo lên Server
   submitProcess(): void {
     const r = this.selectedReport();
     if (!r) return;
+    
     this.loading.set(true);
+    // Gọi Service cập nhật trạng thái, phản hồi và hình thức xử phạt
     this.adminService.updateReportStatus(
       r.id, 
       this.newStatus(), 
@@ -100,8 +104,9 @@ export class ReportsManagementComponent implements OnInit {
       this.actionChoice()
     ).subscribe({
       next: () => {
-        this.closeModal();
-        this.load();
+        alert('Xử lý báo cáo thành công!');
+        this.closeModal(); // Đóng Modal
+        this.load(); // Tải lại danh sách báo cáo
       },
       error: () => {
         this.error.set('Cập nhật báo cáo thất bại.');
