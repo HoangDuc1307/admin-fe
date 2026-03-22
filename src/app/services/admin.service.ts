@@ -21,7 +21,7 @@ export class AdminService {
     });
   }
 
-  /** Lấy summary + timeseries trong 1 request → load nhanh hơn */
+  // Gộp cả summary và timeseries vô 1 request cho nhanh
   getDashboardData(days = 7): Observable<{ summary: any; timeseries: any }> {
     return this.http.get<{ summary: any; timeseries: any }>(`${this.baseUrl}/dashboard/`, {
       params: { days },

@@ -11,11 +11,11 @@
                 <option [value]="30">30 ngày</option>
             </select>
             <button class="btn btn-primary" (click)="loadAll()" [disabled]="loadingSummary || loadingChart">
-                🔄 Làm mới
+                <i class="fas fa-sync-alt me-1"></i> Làm mới
             </button>
             <button class="btn btn-primary" (click)="saveReport()" [disabled]="loadingSummary || loadingChart || savingReport || !summary">
-                <svg class="icon mt-n3" *ngIf="!savingReport"><use xlink:href="#file-plus"></use></svg>
-                <span class="d-inline-block ml-1">{{ savingReport ? '💾 Đang lưu...' : 'Lưu báo cáo' }}</span>
+                <i class="fas fa-save me-1" *ngIf="!savingReport"></i>
+                <span class="d-inline-block">{{ savingReport ? 'Đang lưu...' : 'Lưu báo cáo' }}</span>
             </button>
         </div>
     </div>
@@ -91,7 +91,7 @@
                     <div class="d-flex">
                         <div class="me-6">
                             <span class="square d-flex align-items-center justify-content-center fs-5 badge rounded-circle text-green bg-green-light" style="--square-size: 48px">
-                                <svg class="icon"><use xlink:href="#circle-dollar"></use></svg>
+                                <i class="fas fa-dollar-sign"></i>
                             </span>
                         </div>
                         <div class="media-body">
@@ -152,7 +152,7 @@
     <div class="row">
         <div class="col-xl-12">
             <div class="card rounded-4 p-7 mb-7">
-                <h5 class="card-title fs-6 mb-6">📈 Biểu đồ tăng trưởng ({{ chartDays }} ngày)</h5>
+                <h5 class="card-title fs-6 mb-6"><i class="fas fa-chart-line me-2 text-primary"></i>Biểu đồ tăng trưởng ({{ chartDays }} ngày)</h5>
                 <div class="card-body p-0">
                     <div style="height: 400px;">
                         <canvas #growthChart class="chartjs"></canvas>

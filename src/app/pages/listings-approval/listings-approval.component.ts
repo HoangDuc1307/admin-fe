@@ -21,7 +21,7 @@ export class ListingsApprovalComponent implements OnInit {
   error = signal<string | null>(null);
   items = signal<any[]>([]);
 
-  // Listing Detail Modal State
+  // State cho modal xem chi tiết tin đăng
   showListingModal = signal(false);
   currentListing = signal<any>(null);
 
@@ -70,7 +70,7 @@ export class ListingsApprovalComponent implements OnInit {
 
   reject(id: number): void {
     const reason = window.prompt('Nhập lý do từ chối (bắt buộc để gửi email cho Seller):', '');
-    if (reason === null) return; // Người dùng ấn Cancel
+    if (reason === null) return; // User bấm Cancel thì thôi
     if (!reason.trim()) {
       alert('Vui lòng nhập lý do từ chối!');
       return;

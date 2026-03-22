@@ -14,18 +14,18 @@ export class HeaderAdminComponent implements OnInit {
   private readonly router = inject(Router);
   private readonly adminService = inject(AdminService);
 
-  // Số lượng thông báo chưa đọc (badge)
+  // Badge số thông báo chưa đọc
   unreadCount = signal(0);
   // Danh sách chi tiết các thông báo
   notifications = signal<any[]>([]);
 
   ngOnInit(): void {
     this.loadNotifications();
-    // Tự động cập nhật thông báo sau mỗi 30 giây cho giống app thật
+    // Cập nhật lại mỗi 30s cho real-time
     setInterval(() => this.loadNotifications(), 30000);
   }
 
-  // Hàm gọi API lấy thông báo từ Server
+  // Lấy danh sách thông báo
   loadNotifications() {
     this.adminService.getNotifications().subscribe({
       next: (res) => {
@@ -39,7 +39,7 @@ export class HeaderAdminComponent implements OnInit {
   }
 
   logout() {
-    // Xử lý đăng xuất đơn giản (về trang login)
+    // Logout về trang đăng nhập
     this.router.navigate(['/login']);
   }
 }

@@ -20,6 +20,7 @@ export class UsersManagementComponent implements OnInit {
   statusFilter = signal<'ALL' | 'ACTIVE' | 'BLOCKED'>('ALL');
   users = signal<any[]>([]);
 
+  // Filter lọc theo search và status
   filtered = computed(() => {
     const q = this.search().trim().toLowerCase();
     const sf = this.statusFilter();
@@ -33,6 +34,7 @@ export class UsersManagementComponent implements OnInit {
   });
 
   ngOnInit(): void {
+    // Lấy CSRF trước rồi mới load data
     this.adminService.getCsrf().subscribe({ next: () => this.load(), error: () => this.load() });
   }
 

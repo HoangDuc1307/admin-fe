@@ -27,6 +27,20 @@
     font-size: 0.8rem;
 }
 
+/* Tab dot indicator */
+.tab-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    vertical-align: middle;
+}
+
+/* Action buttons in table */
+.table td .btn {
+    white-space: nowrap;
+}
+
 @media (max-width: 600px) {
     .input {
         min-width: unset;

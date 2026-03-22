@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AdminService } from '../../services/admin.service';
 import Chart from 'chart.js/auto';
+import { finalize } from 'rxjs/operators';
 
 @Component({
   selector: 'app-dashboard',
@@ -132,19 +133,22 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
     this.savingReport = true;
     this.saveMessage = '';
     const days = this.chartDays || this.summary.days || 7;
-    this.adminService.exportDashboardReport(days).subscribe({
+    this.adminService.exportDashboardReport(days).pipe(
+      finalize(() => {
+        this.savingReport = false;
+        this.cdr.detectChanges(); // Force render lại UI
+      })
+    ).subscribe({
       next: (blob: any) => {
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `dashboard-report-${days}-days.csv`;
+        a.download = `dashboard-report-${days}-days.xlsx`;
         a.click();
         window.URL.revokeObjectURL(url);
-        this.savingReport = false;
         this.saveMessage = 'Đã tải file báo cáo (Excel).';
       },
       error: () => {
-        this.savingReport = false;
         this.saveMessage = 'Xuất báo cáo thất bại (kiểm tra đăng nhập admin).';
       },
     });

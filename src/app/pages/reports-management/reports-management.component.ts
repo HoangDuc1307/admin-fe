@@ -90,13 +90,13 @@ export class ReportsManagementComponent implements OnInit {
     this.selectedReport.set(null);
   }
 
-  // Hàm gửi kết quả xử lý báo cáo lên Server
+  // Submit kết quả xử lý report lên server
   submitProcess(): void {
     const r = this.selectedReport();
     if (!r) return;
     
     this.loading.set(true);
-    // Gọi Service cập nhật trạng thái, phản hồi và hình thức xử phạt
+    // Update status, reply và xử phạt thông qua service
     this.adminService.updateReportStatus(
       r.id, 
       this.newStatus(), 
@@ -105,8 +105,8 @@ export class ReportsManagementComponent implements OnInit {
     ).subscribe({
       next: () => {
         alert('Xử lý báo cáo thành công!');
-        this.closeModal(); // Đóng Modal
-        this.load(); // Tải lại danh sách báo cáo
+        this.closeModal(); 
+        this.load(); // Refresh lại danh sách báo cáo
       },
       error: () => {
         this.error.set('Cập nhật báo cáo thất bại.');

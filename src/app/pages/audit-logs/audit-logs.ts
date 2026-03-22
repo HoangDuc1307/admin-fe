@@ -39,6 +39,7 @@ export class AuditLogsComponent implements OnInit {
     UPDATE_REPORT_STATUS: 'Cập nhật báo cáo',
   };
 
+  // Logic lọc log theo ngày và search text
   filtered = computed(() => {
     const q = this.search().trim().toLowerCase();
     const df = this.dateFrom();
@@ -60,6 +61,7 @@ export class AuditLogsComponent implements OnInit {
   });
 
   ngOnInit(): void {
+    // Đảm bảo có CSRF trước khi gọi API
     this.adminService.getCsrf().subscribe({ next: () => this.load(), error: () => this.load() });
   }
 

@@ -18,13 +18,19 @@
             <a class="nav-link cursor-pointer" [class.active]="status() === 'ALL'" (click)="setStatus('ALL')">Tất cả</a>
         </li>
         <li class="nav-item">
-            <a class="nav-link cursor-pointer" [class.active]="status() === 'PENDING'" (click)="setStatus('PENDING')">⏳ Chờ duyệt</a>
+            <a class="nav-link cursor-pointer" [class.active]="status() === 'PENDING'" (click)="setStatus('PENDING')">
+                <span class="tab-dot bg-warning me-1"></span>Chờ duyệt
+            </a>
         </li>
         <li class="nav-item">
-            <a class="nav-link cursor-pointer" [class.active]="status() === 'APPROVED'" (click)="setStatus('APPROVED')">✅ Đã duyệt</a>
+            <a class="nav-link cursor-pointer" [class.active]="status() === 'APPROVED'" (click)="setStatus('APPROVED')">
+                <span class="tab-dot bg-success me-1"></span>Đã duyệt
+            </a>
         </li>
         <li class="nav-item">
-            <a class="nav-link cursor-pointer" [class.active]="status() === 'REJECTED'" (click)="setStatus('REJECTED')">❌ Từ chối</a>
+            <a class="nav-link cursor-pointer" [class.active]="status() === 'REJECTED'" (click)="setStatus('REJECTED')">
+                <span class="tab-dot bg-danger me-1"></span>Từ chối
+            </a>
         </li>
     </ul>
 
@@ -60,26 +66,26 @@
                             <td>{{ x.seller_username }}</td>
                             <td>{{ x.price | number:'1.0-0' }} đ</td>
                             <td>
-                                <span class="badge rounded-lg rounded-pill py-2 px-3 border-0 fs-12"
+                                <span class="badge rounded-pill py-2 px-3 border-0 fs-12"
                                       [ngClass]="{
                                           'text-bg-warning': x.status === 'PENDING',
                                           'text-bg-success': x.status === 'APPROVED',
                                           'text-bg-danger': x.status === 'REJECTED'
                                       }">
-                                    {{ x.status === 'PENDING' ? '⏳ Chờ duyệt' : x.status === 'APPROVED' ? '✅ Đã duyệt' : '❌ Từ chối' }}
+                                    {{ x.status === 'PENDING' ? 'Chờ duyệt' : x.status === 'APPROVED' ? 'Đã duyệt' : 'Từ chối' }}
                                 </span>
                             </td>
                             <td>{{ x.created_at | date:'dd/MM/yyyy' }}</td>
                             <td class="text-center">
-                                <div class="d-flex flex-nowrap justify-content-center gap-2">
-                                    <button class="btn btn-outline-info btn-xs py-2 px-3 fs-13px" (click)="viewListing(x)">
-                                        👁️ Xem Bài Viết
+                                <div class="d-flex flex-nowrap justify-content-center gap-1">
+                                    <button class="btn btn-outline-info btn-sm py-1 px-2" (click)="viewListing(x)" title="Xem bài viết">
+                                        <i class="fas fa-eye"></i>
                                     </button>
-                                    <button *ngIf="x.status === 'PENDING'" class="btn btn-outline-success btn-xs py-2 px-3 fs-13px" (click)="approve(x.id)">
-                                        ✅ Duyệt
+                                    <button *ngIf="x.status === 'PENDING'" class="btn btn-outline-success btn-sm py-1 px-2" (click)="approve(x.id)" title="Duyệt">
+                                        <i class="fas fa-check"></i>
                                     </button>
-                                    <button *ngIf="x.status === 'PENDING'" class="btn btn-outline-danger btn-xs py-2 px-3 fs-13px" (click)="reject(x.id)">
-                                        ❌ Từ chối
+                                    <button *ngIf="x.status === 'PENDING'" class="btn btn-outline-danger btn-sm py-1 px-2" (click)="reject(x.id)" title="Từ chối">
+                                        <i class="fas fa-times"></i>
                                     </button>
                                 </div>
                             </td>
@@ -131,7 +137,7 @@
                                       'text-bg-success': currentListing()?.status === 'APPROVED',
                                       'text-bg-danger': currentListing()?.status === 'REJECTED'
                                   }">
-                                {{ currentListing()?.status === 'PENDING' ? '⏳ Chờ duyệt' : currentListing()?.status === 'APPROVED' ? '✅ Đã duyệt' : '❌ Từ chối' }}
+                                {{ currentListing()?.status === 'PENDING' ? 'Chờ duyệt' : currentListing()?.status === 'APPROVED' ? 'Đã duyệt' : 'Từ chối' }}
                             </span>
                         </div>
 

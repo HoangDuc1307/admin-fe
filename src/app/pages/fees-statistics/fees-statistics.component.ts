@@ -1,8 +1,9 @@
 import { CommonModule, DecimalPipe } from '@angular/common';
-import { Component, OnDestroy, OnInit, inject } from '@angular/core';
+import { Component, OnDestroy, OnInit, inject, ChangeDetectorRef } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { AdminService } from '../../services/admin.service';
 import Chart from 'chart.js/auto';
+import { finalize } from 'rxjs/operators';
 
 @Component({
   selector: 'app-fees-statistics',
@@ -13,6 +14,7 @@ import Chart from 'chart.js/auto';
 })
 export class FeesStatisticsComponent implements OnInit, OnDestroy {
   private readonly adminService = inject(AdminService);
+  private readonly cdr = inject(ChangeDetectorRef);
 
   loading = false;
   stats = { total_revenue: 0, total_platform_fee: 0, total_transactions: 0, revenue_last_n_days: 0, platform_fee_last_n_days: 0, avg_fee_per_transaction: 0, days: 7 };
@@ -79,19 +81,22 @@ export class FeesStatisticsComponent implements OnInit, OnDestroy {
     this.savingReport = true;
     this.saveMessage = '';
     const days = this.chartDays || this.stats.days || 7;
-    this.adminService.exportFeesReport(days).subscribe({
+    this.adminService.exportFeesReport(days).pipe(
+      finalize(() => {
+        this.savingReport = false;
+        this.cdr.detectChanges(); // Gọi detectChanges để cập nhật UI ngay
+      })
+    ).subscribe({
       next: (blob: any) => {
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `fees-report-${days}-days.csv`;
+        a.download = `fees-report-${days}-days.xlsx`;
         a.click();
         window.URL.revokeObjectURL(url);
-        this.savingReport = false;
         this.saveMessage = 'Đã tải file báo cáo phí sàn (Excel).';
       },
       error: () => {
-        this.savingReport = false;
         this.saveMessage = 'Xuất báo cáo thất bại.';
       },
     });
