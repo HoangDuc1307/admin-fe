@@ -23,6 +23,7 @@
     <div class="card mb-4 rounded-4 p-7" *ngIf="!loading()">
         <div class="card-body py-7 px-0">
             <div class="row" *ngIf="filtered().length; else empty">
+                <!-- ... grid items ... -->
                 <div class="col-sm-6 col-md-4 col-lg-3 mb-9" *ngFor="let u of filtered()">
                     <div class="card card-user rounded-4 h-100">
                         <div class="card-header text-center pt-4">
@@ -38,6 +39,12 @@
                                 <span class="badge" [ngClass]="u.is_active ? 'badge-soft-success text-success' : 'badge-soft-danger text-danger'">
                                     {{ u.is_active ? '✅ Hoạt động' : '🔒 Bị khóa' }}
                                 </span>
+                                <span class="badge badge-soft-warning text-warning ms-1">
+                                    ⚠️ {{ u.warning_count || 0 }}
+                                </span>
+                                <p *ngIf="!u.is_active" class="mt-2 mb-0 fs-11px text-danger text-truncate italic" [title]="u.block_reason">
+                                    <i>Lý do: {{ u.block_reason || 'Vi phạm' }}</i>
+                                </p>
                             </div>
                             <div class="mt-4 d-flex flex-column gap-2">
                                 <a class="btn btn-sm btn-outline-primary w-100" [routerLink]="['/pages/users', u.id]">📄 Xem chi tiết</a>
@@ -47,10 +54,46 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- Pagination -->
+                <div class="col-12 mt-4">
+                    <app-pagination 
+                        [totalItems]="totalItems()" 
+                        [pageSize]="pageSize" 
+                        [currentPage]="currentPage()" 
+                        (pageChange)="onPageChange($event)">
+                    </app-pagination>
+                </div>
             </div>
             <ng-template #empty>
                 <div class="text-center py-5 text-muted">😕 Không có người dùng phù hợp.</div>
             </ng-template>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Khóa Tài Khoản -->
+<div class="modal-backdrop fade show" *ngIf="showBlockModal()"></div>
+<div class="modal fade show d-block" *ngIf="showBlockModal()" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title fw-bold">🚫 Khóa tài khoản người dùng</h5>
+                <button type="button" class="btn-close" (click)="showBlockModal.set(false)"></button>
+            </div>
+            <div class="modal-body py-4">
+                <p class="mb-2 fw-medium">Tài khoản: <span class="text-danger">@{{ selectedUserForBlock()?.username }}</span></p>
+                <p class="text-muted small mb-3">Vui lòng nhập lý do khóa tài khoản này. Lý do sẽ được lưu lại trong nhật ký hệ thống.</p>
+                <div class="form-floating">
+                    <textarea class="form-control" placeholder="Nhập lý do..." style="height: 120px" 
+                        [value]="blockReasonInput()" (input)="blockReasonInput.set(area.value)" #area></textarea>
+                    <label>Lý do vi phạm</label>
+                </div>
+            </div>
+            <div class="modal-footer border-0 pt-0">
+                <button type="button" class="btn btn-link text-muted text-decoration-none" (click)="showBlockModal.set(false)">Hủy bỏ</button>
+                <button type="button" class="btn btn-danger px-4 rounded-3" (click)="confirmBlock()">Xác nhận khóa</button>
+            </div>
         </div>
     </div>
 </div>

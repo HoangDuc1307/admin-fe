@@ -3,7 +3,8 @@ import { Component, OnDestroy, OnInit, inject, ChangeDetectorRef } from '@angula
 import { FormsModule } from '@angular/forms';
 import { AdminService } from '../../services/admin.service';
 import Chart from 'chart.js/auto';
-import { finalize } from 'rxjs/operators';
+import { forkJoin, of } from 'rxjs';
+import { catchError, finalize } from 'rxjs/operators';
 
 @Component({
   selector: 'app-fees-statistics',
@@ -25,34 +26,54 @@ export class FeesStatisticsComponent implements OnInit, OnDestroy {
   chartDays = 7;
   private chart?: Chart;
 
+  // Khởi tạo trang, load toàn bộ số liệu phí sàn
   ngOnInit(): void {
     this.load();
   }
 
+  // Dọn dẹp biểu đồ khi rời trang
   ngOnDestroy(): void {
     this.destroyChart();
   }
 
+  /** Tải dữ liệu từ nhiều API cùng lúc: Thống kê tổng, Data biểu đồ, Top giao dịch */
   load(): void {
     this.loading = true;
-    let done = 0;
-    const onComplete = () => {
-      done++;
-      if (done >= 3) {
+    this.saveMessage = '';
+
+    const stats$ = this.adminService.getFeeStatistics(this.chartDays).pipe(catchError(() => of(null)));
+    const ts$ = this.adminService.getDashboardTimeseries(this.chartDays).pipe(catchError(() => of(null)));
+    const top$ = this.adminService.getFeeTopTransactions().pipe(catchError(() => of([])));
+
+    // Chờ cả 3 API trả về kết quả rồi mới xử lý tiếp
+    forkJoin({ stats: stats$, ts: ts$, top: top$ }).pipe(
+      finalize(() => {
         this.loading = false;
-        queueMicrotask(() => this.renderChart());
+        this.cdr.detectChanges();
+        queueMicrotask(() => this.renderChart()); // Vẽ lại chart sau khi đã có đủ số liệu
+      })
+    ).subscribe(({ stats, ts, top }) => {
+      if (stats) {
+        this.stats = { ...this.stats, ...stats };
       }
-    };
-    this.adminService.getFeeStatistics(this.chartDays).subscribe({ next: (d) => (this.stats = { ...this.stats, ...d }), complete: onComplete });
-    this.adminService.getDashboardTimeseries(this.chartDays).subscribe({ next: (d) => (this.ts = { labels: d?.labels ?? [], revenue: d?.revenue ?? [], platform_fee: d?.platform_fee ?? [] }), complete: onComplete });
-    this.adminService.getFeeTopTransactions().subscribe({ next: (d) => (this.topTransactions = Array.isArray(d) ? d : []), complete: onComplete });
+      if (ts) {
+        this.ts = {
+          labels: ts.labels ?? [],
+          revenue: ts.revenue ?? [],
+          platform_fee: ts.platform_fee ?? []
+        };
+      }
+      this.topTransactions = Array.isArray(top) ? top : [];
+    });
   }
 
+  // Khi admin thay đổi filter (7/14/30 ngày)
   onChartDaysChange(): void {
     this.chartDays = Number(this.chartDays);
     this.load();
   }
 
+  // Cấu hình biểu đồ cột (Bar Chart) hiển thị Phí sàn & Doanh thu
   private renderChart(): void {
     const canvas = document.getElementById('feeChart') as HTMLCanvasElement | null;
     if (!canvas) return;
@@ -68,7 +89,12 @@ export class FeesStatisticsComponent implements OnInit, OnDestroy {
           { label: 'Doanh thu', data: this.ts.revenue ?? [], backgroundColor: 'rgba(37, 99, 235, 0.25)', borderColor: '#2563eb', borderWidth: 1 },
         ],
       },
-      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } }, scales: { y: { beginAtZero: true } } },
+      options: { 
+        responsive: true, 
+        maintainAspectRatio: false, 
+        plugins: { legend: { position: 'bottom' } }, 
+        scales: { y: { beginAtZero: true } } 
+      },
     });
   }
 
@@ -76,6 +102,7 @@ export class FeesStatisticsComponent implements OnInit, OnDestroy {
     if (this.chart) { this.chart.destroy(); this.chart = undefined; }
   }
 
+  // Xuất file Excel báo cáo phí sàn
   saveReport(): void {
     if (!this.stats || !this.ts) { this.saveMessage = 'Chưa có dữ liệu để lưu.'; return; }
     this.savingReport = true;
@@ -84,10 +111,11 @@ export class FeesStatisticsComponent implements OnInit, OnDestroy {
     this.adminService.exportFeesReport(days).pipe(
       finalize(() => {
         this.savingReport = false;
-        this.cdr.detectChanges(); // Gọi detectChanges để cập nhật UI ngay
+        this.cdr.detectChanges(); // Force Angular cập nhật lại thông báo trên UI
       })
     ).subscribe({
       next: (blob: any) => {
+        // Tạo link ảo để download file
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;

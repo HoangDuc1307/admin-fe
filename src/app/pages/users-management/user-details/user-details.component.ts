@@ -18,6 +18,10 @@ export class UserDetailComponent implements OnInit {
   loading = signal(true);
   error = signal<string | null>(null);
   data = signal<any>(null);
+  
+  // Logic cho Modal Khóa tài khoản tại trang chi tiết
+  showBlockModal = signal(false);
+  blockReasonInput = signal('Vi phạm quy định sàn');
 
   statusLabels: Record<string, string> = {
     OPEN: 'Mới',
@@ -50,22 +54,32 @@ export class UserDetailComponent implements OnInit {
     });
   }
 
-  // Hàm xử lý Khóa/Mở khóa người dùng
+  // Xử lý nút Khóa/Mở khóa
   toggleBlock(): void {
     const user = this.data().user;
-    const isBlocked = user.profile?.is_blocked;
-    const actionText = isBlocked ? 'mở khóa' : 'khóa';
+    const isBlocked = user.is_blocked;
     
-    // Hiển thị hộp thoại xác nhận trước khi thực hiện
-    if (!confirm(`Bạn có chắc chắn muốn ${actionText} tài khoản này không?`)) return;
+    if (!isBlocked) {
+      // Hiện Modal để nhập lý do
+      this.showBlockModal.set(true);
+    } else {
+      if (!confirm(`Bạn có chắc chắn muốn mở khóa tài khoản này không?`)) return;
+      this.adminService.unblockUser(user.id).subscribe(() => {
+        alert('Đã mở khóa tài khoản thành công!');
+        this.load();
+      });
+    }
+  }
 
-    const obs = isBlocked 
-      ? this.adminService.unblockUser(user.id) 
-      : this.adminService.blockUser(user.id);
+  // Xác nhận khóa vĩnh viễn từ Modal
+  confirmBlock(): void {
+    const user = this.data().user;
+    const reason = this.blockReasonInput();
     
-    obs.subscribe(() => {
-      alert(`Đã ${actionText} tài khoản thành công!`);
-      this.load(); // Tải lại dữ liệu sau khi xong
+    this.adminService.blockUser(user.id, reason).subscribe(() => {
+      alert('Đã khóa tài khoản thành công!');
+      this.showBlockModal.set(false);
+      this.load();
     });
   }
 }

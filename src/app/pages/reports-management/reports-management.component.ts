@@ -2,14 +2,15 @@ import { CommonModule, DatePipe } from '@angular/common';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
-import { AdminService } from '../../services/admin.service';
+import { AdminService, PaginatedResponse } from '../../services/admin.service';
+import { PaginationComponent } from '../../components/pagination/pagination.component';
 
-type ReportStatus = 'OPEN' | 'IN_PROGRESS' | 'RESOLVED' | 'REJECTED';
+type ReportStatus = 'PENDING' | 'RESOLVED' | 'REJECTED';
 
 @Component({
   selector: 'app-reports-management',
   standalone: true,
-  imports: [CommonModule, FormsModule, DatePipe, RouterLink],
+  imports: [CommonModule, FormsModule, DatePipe, RouterLink, PaginationComponent],
   templateUrl: './reports-management.component.html',
   styleUrl: './reports-management.component.css',
 })
@@ -23,12 +24,16 @@ export class ReportsManagementComponent implements OnInit {
   dateFrom = signal('');
   dateTo = signal('');
   reports = signal<any[]>([]);
-  statuses: ReportStatus[] = ['OPEN', 'IN_PROGRESS', 'RESOLVED', 'REJECTED'];
+  totalItems = signal(0);
+  currentPage = signal(1);
+  pageSize = 10;
+  statuses: ReportStatus[] = ['PENDING', 'RESOLVED', 'REJECTED'];
   statusLabels: Record<string, string> = {
-    OPEN: 'Mới',
+    PENDING: 'Chờ xử lý',
+    OPEN: 'Chờ xử lý',
     IN_PROGRESS: 'Đang xử lý',
-    RESOLVED: 'Đã giải quyết',
-    REJECTED: 'Từ chối',
+    RESOLVED: 'Đã xử lý (Vi phạm)',
+    REJECTED: 'Đã xử lý (Bỏ qua)',
   };
 
   filtered = computed(() => {
@@ -59,9 +64,10 @@ export class ReportsManagementComponent implements OnInit {
   load(): void {
     this.loading.set(true);
     this.error.set(null);
-    this.adminService.getReports().subscribe({
-      next: (data) => {
-        this.reports.set(Array.isArray(data) ? data : []);
+    this.adminService.getReports(this.currentPage()).subscribe({
+      next: (res: PaginatedResponse<any>) => {
+        this.reports.set(res.results || []);
+        this.totalItems.set(res.count || 0);
         this.loading.set(false);
       },
       error: () => {
@@ -71,45 +77,55 @@ export class ReportsManagementComponent implements OnInit {
     });
   }
 
+  onPageChange(page: number): void {
+    this.currentPage.set(page);
+    this.load();
+  }
+
+  // Trạng thái cho Modal xử lý Báo cáo
   selectedReport = signal<any>(null);
   showModal = signal(false);
   replyText = signal('');
-  actionChoice = signal('NONE');
-  newStatus = signal<ReportStatus>('OPEN');
+  actionChoice = signal('NONE'); // NONE, BLOCK
+  newStatus = signal<ReportStatus>('PENDING');
 
+  // Mở popup để xử lý, tiện tay reset luôn mấy cái input cũ
   openProcessModal(report: any): void {
     this.selectedReport.set(report);
     this.newStatus.set(report.status);
     this.replyText.set(report.admin_reply || '');
-    this.actionChoice.set('NONE');
+    this.actionChoice.set('NONE'); // Mặc định là không khóa, ai muốn khóa thì tự tích chọn
     this.showModal.set(true);
   }
 
+  // Đóng sạch sẽ modal
   closeModal(): void {
     this.showModal.set(false);
     this.selectedReport.set(null);
   }
 
-  // Submit kết quả xử lý report lên server
-  submitProcess(): void {
+  /**
+   * Luồng xử lý chính: Chốt báo cáo là Đúng (RESOLVED) hay Sai (REJECTED)
+   */
+  submitProcess(status: ReportStatus): void {
     const r = this.selectedReport();
     if (!r) return;
     
     this.loading.set(true);
-    // Update status, reply và xử phạt thông qua service
+    // Đẩy hết mớ record (note, trạng thái, có khóa hay không) lên server
     this.adminService.updateReportStatus(
       r.id, 
-      this.newStatus(), 
+      status, 
       this.replyText(), 
       this.actionChoice()
     ).subscribe({
       next: () => {
-        alert('Xử lý báo cáo thành công!');
+        alert('Đã xử lý xong báo cáo!');
         this.closeModal(); 
-        this.load(); // Refresh lại danh sách báo cáo
+        this.load(); // Load lại list cho mới
       },
       error: () => {
-        this.error.set('Cập nhật báo cáo thất bại.');
+        this.error.set('Lỗi rồi, không cập nhật được report.');
         this.loading.set(false);
       }
     });

@@ -41,6 +41,7 @@
         <div class="card-body px-0 pt-7 pb-0">
             <div class="table-responsive table-scroll" *ngIf="filteredItems().length; else empty">
                 <table class="table table-hover align-middle table-nowrap mb-0">
+                    <!-- ... table headers ... -->
                     <thead class="table-light">
                         <tr>
                             <th>ID</th>
@@ -92,6 +93,16 @@
                         </tr>
                     </tbody>
                 </table>
+
+                <!-- Pagination -->
+                <div class="mt-4">
+                    <app-pagination 
+                        [totalItems]="totalItems()" 
+                        [pageSize]="pageSize" 
+                        [currentPage]="currentPage()" 
+                        (pageChange)="onPageChange($event)">
+                    </app-pagination>
+                </div>
             </div>
             <ng-template #empty>
                 <div class="text-center py-5 text-muted">

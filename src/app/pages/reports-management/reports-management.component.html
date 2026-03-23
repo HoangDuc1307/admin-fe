@@ -40,6 +40,7 @@
         <div class="card-body px-0 pt-7 pb-0">
             <div class="table-responsive table-scroll" *ngIf="filtered().length; else empty">
                 <table class="table table-hover align-middle table-nowrap mb-0">
+                    <!-- ... table content ... -->
                     <thead class="table-light">
                         <tr>
                             <th>ID</th>
@@ -58,20 +59,12 @@
                             <td><a class="fw-semibold text-decoration-none text-danger" [routerLink]="['/pages/users', r.target_id]">{{ r.target_username }}</a></td>
                             <td>
                                 <div class="text-wrap" style="max-width: 250px;">{{ r.reason }}</div>
-                                <div *ngIf="r.evidences && r.evidences.length > 0" class="mt-2">
-                                    <small class="text-muted d-block mb-1">Bằng chứng đính kèm:</small>
-                                    <div class="d-flex flex-wrap gap-1">
-                                        <a *ngFor="let ev of r.evidences" [href]="ev.image" target="_blank" class="d-inline-block border rounded p-1" style="background: #f8f9fa;">
-                                            <img [src]="ev.image" alt="Evidence" style="max-height: 40px; max-width: 60px; object-fit: cover;">
-                                        </a>
-                                    </div>
-                                </div>
+                                <!-- ... evidences ... -->
                             </td>
                             <td class="text-center">
                                 <span class="badge rounded-lg rounded-pill py-2 px-3 border-0 fs-12 w-100"
                                       [ngClass]="{
-                                          'text-bg-secondary': r.status === 'OPEN',
-                                          'text-bg-warning': r.status === 'IN_PROGRESS',
+                                          'text-bg-secondary': r.status === 'PENDING' || r.status === 'OPEN' || r.status === 'IN_PROGRESS',
                                           'text-bg-success': r.status === 'RESOLVED',
                                           'text-bg-danger': r.status === 'REJECTED'
                                       }">
@@ -87,6 +80,16 @@
                         </tr>
                     </tbody>
                 </table>
+
+                <!-- Pagination -->
+                <div class="mt-4">
+                    <app-pagination 
+                        [totalItems]="totalItems()" 
+                        [pageSize]="pageSize" 
+                        [currentPage]="currentPage()" 
+                        (pageChange)="onPageChange($event)">
+                    </app-pagination>
+                </div>
             </div>
             <ng-template #empty>
                 <div class="text-center py-5 text-muted">😕 Không có báo cáo phù hợp.</div>
@@ -131,33 +134,39 @@
 
                 <hr class="my-4">
 
-                <form (ngSubmit)="submitProcess()">
+                <form (ngSubmit)="$event.preventDefault()">
+                    <!-- 1. Form phản hồi kết quả -->
                     <div class="row g-4">
-                        <div class="col-md-6">
-                            <label class="form-label fw-bold">Quyết định trạng thái Báo cáo:</label>
-                            <select class="form-select" [ngModel]="newStatus()" (ngModelChange)="newStatus.set($event)" name="status">
-                                <option *ngFor="let s of statuses" [value]="s">{{ statusLabels[s] }}</option>
-                            </select>
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label fw-bold text-danger">Quyết định Xử phạt (Người bị tố cáo):</label>
-                            <select class="form-select border-danger" [ngModel]="actionChoice()" (ngModelChange)="actionChoice.set($event)" name="actionChoice">
-                                <option value="NONE">✅ Không phạt</option>
-                                <option value="WARN">⚠️ Gửi cảnh cáo (+1 Cảnh cáo)</option>
-                                <option value="BLOCK">⛔ Khóa tài khoản ngay lập tức</option>
-                            </select>
-                        </div>
                         <div class="col-12">
-                            <label class="form-label fw-bold">Phản hồi cho người tố cáo (Gửi qua Email):</label>
-                            <textarea class="form-control" rows="3" placeholder="Nhập lời cảm ơn hoặc kết luận gửi đến @{{ selectedReport()?.reporter_username }}..." [ngModel]="replyText()" (ngModelChange)="replyText.set($event)" name="replyText"></textarea>
+                            <label class="form-label fw-bold">Phản hồi kết quả (Gửi cho người báo cáo):</label>
+                            <textarea class="form-control" rows="3" placeholder="Nhập lời giải thích hoặc kết luận gửi đến @{{ selectedReport()?.reporter_username }}..." [ngModel]="replyText()" (ngModelChange)="replyText.set($event)" name="replyText"></textarea>
+                        </div>
+                        <!-- 2. Nút gạt tùy chọn Phạt nặng (Khóa tài khoản) -->
+                        <div class="col-12">
+                            <div class="form-check form-switch p-3 bg-danger-soft rounded-3 border border-danger border-dashed">
+                                <input class="form-check-input ms-0 me-2" type="checkbox" id="blockUserCheck" 
+                                    [checked]="actionChoice() === 'BLOCK'" (change)="actionChoice.set($event.target.checked ? 'BLOCK' : 'NONE')">
+                                <label class="form-check-label fw-bold text-danger" for="blockUserCheck">
+                                    🚫 Khóa tài khoản người bị tố cáo vĩnh viễn
+                                </label>
+                            </div>
                         </div>
                     </div>
                     
+                    <!-- 3. HAI NÚT HÀNH ĐỘNG CHÍNH (Gom luồng Duyệt/Bác bỏ) -->
                     <div class="d-flex justify-content-end mt-5 gap-3">
-                        <button type="button" class="btn btn-light" (click)="closeModal()">Hủy bỏ</button>
-                        <button type="submit" class="btn btn-primary px-5" [disabled]="loading()">
-                            <span *ngIf="loading()" class="spinner-border spinner-border-sm me-2"></span>
-                            Lưu quyết định
+                        <button type="button" class="btn btn-light" (click)="closeModal()">Đóng</button>
+                        
+                        <!-- Nút này gửi về status='REJECTED' (Không phạt) -->
+                        <button type="button" class="btn btn-outline-danger px-4" 
+                            (click)="submitProcess('REJECTED')" [disabled]="loading()">
+                            ❌ Bỏ qua báo cáo
+                        </button>
+                        
+                        <!-- Nút này gửi về status='RESOLVED' (Hệ thống sẽ tự cộng +1 Cảnh báo) -->
+                        <button type="button" class="btn btn-success px-4" 
+                            (click)="submitProcess('RESOLVED')" [disabled]="loading()">
+                            <i class="fas fa-check me-1"></i> Xác nhận vi phạm & Cảnh cáo (+1)
                         </button>
                     </div>
                 </form>

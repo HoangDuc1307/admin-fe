@@ -27,27 +27,30 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
   @ViewChild('growthChart', { static: false }) growthChart?: ElementRef<HTMLCanvasElement>;
   private chart?: Chart;
 
+  // Vừa vào trang là load ngay số liệu tổng quan và biểu đồ
   ngOnInit(): void {
     this.loadSummary();
     this.loadChart();
   }
 
+  // Vẽ biểu đồ sau khi giao diện đã sẵn sàng
   ngAfterViewInit(): void {
     queueMicrotask(() => this.renderChart());
   }
 
+  // Dọn dẹp biểu đồ khi chuyển trang để tránh rò rỉ bộ nhớ
   ngOnDestroy(): void {
     this.destroyChart();
   }
 
-  /** Tải 6 thẻ thống kê; giao diện hiển thị sẵn với 0, cập nhật khi có data */
+  /** Lấy dữ liệu cho 6 thẻ thông số ở đầu trang */
   loadSummary(): void {
     this.loadingSummary = true;
     this.adminService.getDashboardSummary(this.chartDays).subscribe({
       next: (data) => {
         this.summary = { ...this.summary, ...data };
         this.loadingSummary = false;
-        this.cdr.detectChanges();
+        this.cdr.detectChanges(); // Ép Angular cập nhật lại UI ngay
       },
       error: () => {
         this.loadingSummary = false;
@@ -56,7 +59,7 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
     });
   }
 
-  /** Tải biểu đồ; giao diện hiển thị sẵn biểu đồ rỗng, cập nhật khi có data */
+  /** Lấy data để vẽ biểu đồ tăng trưởng */
   loadChart(): void {
     this.loadingChart = true;
     this.adminService.getDashboardTimeseries(this.chartDays).subscribe({
@@ -64,7 +67,7 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
         this.ts = { labels: data?.labels ?? [], listings_created: data?.listings_created ?? [], transactions_count: data?.transactions_count ?? [] };
         this.loadingChart = false;
         this.cdr.detectChanges();
-        queueMicrotask(() => this.renderChart());
+        queueMicrotask(() => this.renderChart()); // Vẽ lại chart khi có data mới
       },
       error: () => {
         this.loadingChart = false;
@@ -73,6 +76,7 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
     });
   }
 
+  // Khi admin đổi số ngày (7/14/30) thì load lại toàn bộ
   onChartDaysChange(): void {
     this.loadSummary();
     this.loadChart();
@@ -83,9 +87,10 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
     this.loadChart();
   }
 
+  // Khởi tạo và cấu hình biểu đồ Chart.js
   private renderChart(): void {
     if (!this.growthChart?.nativeElement) return;
-    this.destroyChart();
+    this.destroyChart(); // Xóa cái cũ đi trước khi vẽ cái mới
     const ctx = this.growthChart.nativeElement.getContext('2d');
     if (!ctx) return;
     this.chart = new Chart(ctx, {
@@ -112,7 +117,7 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
       options: {
         responsive: true,
         maintainAspectRatio: false,
-        plugins: { legend: { position: 'bottom' } },
+        plugins: { legend: { position: 'bottom' } }, // Đẩy chú thích xuống dưới cho thoáng
         scales: { y: { beginAtZero: true } },
       },
     });
@@ -125,6 +130,7 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
     }
   }
 
+  // Xuất báo cáo ra file Excel và tự động tải về máy
   saveReport(): void {
     if (!this.summary || !this.ts) {
       this.saveMessage = 'Chưa có dữ liệu để lưu.';
@@ -136,10 +142,11 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
     this.adminService.exportDashboardReport(days).pipe(
       finalize(() => {
         this.savingReport = false;
-        this.cdr.detectChanges(); // Force render lại UI
+        this.cdr.detectChanges(); 
       })
     ).subscribe({
       next: (blob: any) => {
+        // Tạo link ảo để trình duyệt tự kích hoạt tải file
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
